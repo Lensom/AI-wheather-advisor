@@ -1,0 +1,171 @@
+{
+  "location": {
+    "name": "Berlin",
+    "country": "Germany",
+    "latitude": 52.52437,
+    "longitude": 13.41053,
+    "timezone": "Europe/Berlin",
+    "admin1": "State of Berlin"
+  },
+  "current": {
+    "observed_at": "2026-10-14T21:00:00",
+    "temperature_c": 12.5,
+    "apparent_temperature_c": 10.7,
+    "relative_humidity_pct": 69,
+    "precipitation_mm": 0.0,
+    "wind_speed_kmh": 7.0
+  },
+  "hourly": [
+    {
+      "time": "2026-10-14T21:00:00",
+      "temperature_c": 12.5,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-14T22:00:00",
+      "temperature_c": 11.7,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-14T23:00:00",
+      "temperature_c": 11.2,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T00:00:00",
+      "temperature_c": 10.6,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T01:00:00",
+      "temperature_c": 10.2,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T02:00:00",
+      "temperature_c": 9.7,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T03:00:00",
+      "temperature_c": 9.3,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T04:00:00",
+      "temperature_c": 9.0,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T05:00:00",
+      "temperature_c": 8.9,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T06:00:00",
+      "temperature_c": 8.7,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T07:00:00",
+      "temperature_c": 8.4,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T08:00:00",
+      "temperature_c": 8.1,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T09:00:00",
+      "temperature_c": 8.5,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T10:00:00",
+      "temperature_c": 9.6,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T11:00:00",
+      "temperature_c": 10.8,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T12:00:00",
+      "temperature_c": 12.4,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T13:00:00",
+      "temperature_c": 13.9,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T14:00:00",
+      "temperature_c": 15.0,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T15:00:00",
+      "temperature_c": 15.8,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T16:00:00",
+      "temperature_c": 16.3,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T17:00:00",
+      "temperature_c": 16.2,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T18:00:00",
+      "temperature_c": 15.7,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T19:00:00",
+      "temperature_c": 14.7,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    },
+    {
+      "time": "2026-10-15T20:00:00",
+      "temperature_c": 13.6,
+      "precipitation_mm": 0.0,
+      "precipitation_probability_pct": 0
+    }
+  ],
+  "units": {
+    "temperature": "°C",
+    "precipitation": "mm",
+    "wind_speed": "km/h",
+    "humidity": "%",
+    "precipitation_probability": "%"
+  }
+}
