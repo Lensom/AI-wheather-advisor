@@ -1,4 +1,4 @@
-"""CLI: city -> weather -> indicators -> grounded Gemini advice."""
+"""CLI: city -> weather -> indicators -> Python decisions -> Gemini explanation."""
 
 from __future__ import annotations
 
@@ -9,10 +9,13 @@ import sys
 import httpx
 
 from advice_models import WeatherAdvice, validation_context
+from agent import AgentLoopError, AgentResult, WeatherAgent
+from assessment import WeatherAssessment, assess
 from grounding import find_unsupported_numbers
 from indicators import WeatherIndicators, compute_indicators
 from llm_client import LLMClient, StructuredOutputError
 from prompts import build_advice_prompt, weather_facts_json
+from tools import WeatherTools
 from weather_client import (
     CityNotFoundError,
     WeatherAPIError,
@@ -71,7 +74,11 @@ def load_weather_for_city(city: str) -> WeatherSnapshot:
         return fetch_weather(chosen, client=client)
 
 
-def display_snapshot(snapshot: WeatherSnapshot, indicators: WeatherIndicators) -> None:
+def display_snapshot(
+    snapshot: WeatherSnapshot,
+    indicators: WeatherIndicators,
+    assessment: WeatherAssessment,
+) -> None:
     loc = snapshot.location
     cur = snapshot.current
     units = snapshot.units
@@ -130,42 +137,76 @@ def display_snapshot(snapshot: WeatherSnapshot, indicators: WeatherIndicators) -
         for note in indicators.comfort_notes:
             print(f"    - {note}")
 
+    display_assessment(assessment)
+
     print(f"\nHourly forecast (next {len(snapshot.hourly)} h)")
     print(
-        f"  {'Time':<16} {'Temp':>7} {'Precip':>8} {'Prob':>6}"
+        f"  {'Time':<16} {'Temp':>7} {'Precip':>8} {'Prob':>6} {'Rain risk':>10} {'Walk':>5}"
     )
     print(
-        f"  {'-' * 16} {'-' * 7} {'-' * 8} {'-' * 6}"
+        f"  {'-' * 16} {'-' * 7} {'-' * 8} {'-' * 6} {'-' * 10} {'-' * 5}"
     )
-    for point in snapshot.hourly:
+    for point, hour in zip(snapshot.hourly, assessment.hourly):
         prob = (
             f"{point.precipitation_probability_pct}%"
             if point.precipitation_probability_pct is not None
             else "n/a"
         )
+        walk = hour.walk_score if hour.walk_score is not None else "-"
         print(
             f"  {point.time.strftime('%Y-%m-%d %H:%M'):<16} "
             f"{point.temperature_c:>6.1f}° "
             f"{point.precipitation_mm:>7.1f}mm "
-            f"{prob:>6}"
+            f"{prob:>6} "
+            f"{hour.rain_risk:>10} "
+            f"{walk:>5}"
+        )
+
+
+def display_assessment(assessment: WeatherAssessment) -> None:
+    rain = assessment.rain_risk
+    verdict = assessment.outdoor_verdict
+    first_high = (
+        rain.first_high_risk_at.strftime("%Y-%m-%d %H:%M") if rain.first_high_risk_at else "none"
+    )
+    print("\nDeterministic decisions (Python rules, see assessment.py)")
+    print(f"  rain risk overall:      {rain.overall}")
+    print(f"  rain risk next 3 h:     {rain.next_3h}")
+    print(f"  first high-risk hour:   {first_high}")
+    print(f"  outdoor verdict:        {verdict.level}")
+    for reason in verdict.reasons:
+        print(f"    - {reason}")
+    if not assessment.walk_candidates:
+        print("  walk candidates:        none")
+        return
+    print("  walk candidates:")
+    for c in assessment.walk_candidates:
+        print(
+            f"    {c.time.strftime('%Y-%m-%d %H:%M')}  score {c.walk_score:>3}  "
+            f"{c.temperature_c:.1f}°C  rain risk {c.rain_risk}"
         )
 
 
 async def generate_advice(
     snapshot: WeatherSnapshot,
     indicators: WeatherIndicators,
+    assessment: WeatherAssessment,
+    llm: LLMClient | None = None,
 ) -> tuple[WeatherAdvice, str, list[float]]:
-    """Return validated structured advice, usage summary, unsupported numbers."""
-    llm = LLMClient()
-    prompt = build_advice_prompt(snapshot, indicators)
+    """Return validated structured advice, usage summary, unsupported numbers.
+
+    Pass llm to read its usage afterwards (evals do).
+    """
+    llm = llm or LLMClient()
+    prompt = build_advice_prompt(snapshot, indicators, assessment)
     advice = await llm.structured(
         prompt,
         schema=WeatherAdvice,
-        context=validation_context(snapshot),
+        context=validation_context(assessment),
     )
     # Soft check: logged and shown, never a reason to reject (too many false positives).
     unsupported = find_unsupported_numbers(
-        advice.model_dump_json(), weather_facts_json(snapshot, indicators)
+        advice.model_dump_json(), weather_facts_json(snapshot, indicators, assessment)
     )
     return advice, llm.usage.summary(), unsupported
 
@@ -181,14 +222,15 @@ def _print_list(title: str, items: list[str]) -> None:
 
 def display_advice(advice: WeatherAdvice, usage: str, unsupported: list[float]) -> None:
     print("\n" + "=" * 60)
-    print("  AI advice (grounded + structured, validated)")
+    print("  AI explanation (grounded + structured, validated)")
     print("=" * 60)
     print(f"\nSummary\n  {advice.summary}")
     _print_list("Clothing", advice.clothing_recommendations)
-    print(f"\nOutdoor activity\n  {advice.outdoor_activity}")
+    print(f"\nOutdoor activity (Python verdict)\n  {advice.outdoor_activity}")
     print(
-        f"\nBest walk time\n  {advice.best_time if advice.best_time else 'insufficient data'}"
+        f"\nBest walk time\n  {advice.best_time if advice.best_time else 'no suitable hour'}"
     )
+    print(f"\nRain risk impact\n  {advice.rain_risk_explanation}")
     _print_list("Weather concerns", advice.weather_concerns)
     _print_list("Reasoning", advice.reasoning)
     _print_list("Missing information", advice.missing_information)
@@ -197,8 +239,7 @@ def display_advice(advice: WeatherAdvice, usage: str, unsupported: list[float]) 
     print(f"\n[token usage] {usage}")
 
 
-def main() -> int:
-    _configure_stdout()
+def _configure_logging() -> None:
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s %(name)s: %(message)s",
@@ -206,6 +247,65 @@ def main() -> int:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     # Gemini SDK is noisy at INFO during normal runs.
     logging.getLogger("google_genai").setLevel(logging.WARNING)
+    # The CLI prints its own tool trace.
+    logging.getLogger("tools").setLevel(logging.WARNING)
+
+
+def display_agent_result(result: AgentResult, usage: str) -> None:
+    for call in result.tool_calls:
+        args = ", ".join(f"{k}={v!r}" for k, v in call.args.items())
+        cached = "  (cached)" if call.cached else ""
+        print(f"  [tool] {call.name}({args}) -> {call.status}  {call.duration_ms} ms{cached}")
+    print(f"\n{result.answer}\n")
+    if not result.session_has_weather_data:
+        print("  [note] no weather data has been fetched in this session")
+    if result.unsupported_numbers:
+        print(f"  [grounding check] numbers not found in tool results: {result.unsupported_numbers}")
+    print(f"  [steps] {result.steps}  [token usage, session] {usage}")
+
+
+async def _ask_loop(question: str | None) -> int:
+    llm = LLMClient()
+    agent = WeatherAgent(llm, WeatherTools())
+    interactive = question is None
+
+    while True:
+        if interactive:
+            question = input("\nYou: ").strip()
+            if question.lower() in {"", "exit", "quit"}:
+                return 0
+        try:
+            result = await agent.ask(question)
+        except AgentLoopError as exc:
+            print(f"\nAgent error: {exc}")
+            if not interactive:
+                return 1
+            continue
+        display_agent_result(result, llm.usage.summary())
+        if not interactive:
+            return 0
+
+
+def ask_main(question: str) -> int:
+    """Free-form question mode: Gemini decides when to call get_weather."""
+    _configure_stdout()
+    _configure_logging()
+    if not question.strip():
+        print("AI Weather Advisor: ask about weather in any city (empty line to exit)")
+    try:
+        return asyncio.run(_ask_loop(question.strip() or None))
+    except KeyboardInterrupt:
+        print("\nCancelled.")
+        return 130
+    except Exception as exc:
+        logger.exception("Agent failed")
+        print(f"\nGemini error: {type(exc).__name__}: {exc}")
+        return 1
+
+
+def main() -> int:
+    _configure_stdout()
+    _configure_logging()
 
     print("AI Weather Advisor\n")
     city = prompt_city()
@@ -213,6 +313,7 @@ def main() -> int:
     try:
         snapshot = load_weather_for_city(city)
         indicators = compute_indicators(snapshot)
+        assessment = assess(snapshot)
     except CityNotFoundError as exc:
         print(f"\nError: {exc}")
         return 1
@@ -227,10 +328,12 @@ def main() -> int:
         print("\nCancelled.")
         return 130
 
-    display_snapshot(snapshot, indicators)
+    display_snapshot(snapshot, indicators, assessment)
 
     try:
-        advice, usage, unsupported = asyncio.run(generate_advice(snapshot, indicators))
+        advice, usage, unsupported = asyncio.run(
+            generate_advice(snapshot, indicators, assessment)
+        )
     except StructuredOutputError as exc:
         print(f"\nGemini returned invalid advice ({exc.attempts} attempts):")
         for problem in exc.errors:

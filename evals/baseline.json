@@ -1,0 +1,995 @@
+{
+  "created": "2026-10-14T23:04:47",
+  "model": "gemini-3.1-flash-lite",
+  "args": {
+    "suite": "all",
+    "repeat": 1,
+    "case": null,
+    "judge": true,
+    "model": null
+  },
+  "summary": {
+    "runs": 15,
+    "pass_rate": 1.0,
+    "case_pass_rates": {
+      "advice/mild_dry": 1.0,
+      "advice/cold_dry": 1.0,
+      "advice/hot_dry": 1.0,
+      "advice/rainy_afternoon": 1.0,
+      "advice/all_day_rain": 1.0,
+      "advice/drizzle": 1.0,
+      "advice/missing_probability": 1.0,
+      "advice/windy": 1.0,
+      "agent/umbrella": 1.0,
+      "agent/compare_two": 1.0,
+      "agent/no_city": 1.0,
+      "agent/off_topic": 1.0,
+      "agent/unknown_city": 1.0,
+      "agent/beyond_forecast": 1.0,
+      "agent/follow_ups": 1.0
+    },
+    "check_pass_rates": {
+      "answer_content": 1.0,
+      "answered": 1.0,
+      "best_time": 1.0,
+      "clothing_forbidden": 1.0,
+      "clothing_required": 1.0,
+      "concerns_mention": 1.0,
+      "first_try_valid": 1.0,
+      "judge": 1.0,
+      "missing_information": 1.0,
+      "no_absent_fields": 1.0,
+      "numbers_grounded": 0.8823529411764706,
+      "steps": 1.0,
+      "tool_calls": 1.0,
+      "valid_output": 1.0,
+      "verdict_matches_python": 1.0
+    },
+    "latency_p50_s": 3.19,
+    "latency_p95_s": 9.01,
+    "avg_input_tokens": 3425,
+    "avg_output_tokens": 281,
+    "llm_calls": 21,
+    "total_cost_usd": 0.019161,
+    "avg_cost_usd": 0.001277,
+    "judge_cost_usd": 0.007419
+  },
+  "results": [
+    {
+      "suite": "advice",
+      "case_id": "mild_dry",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "valid_output",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "verdict_matches_python",
+          "passed": true,
+          "detail": "model=recommended python=recommended expected=recommended",
+          "hard": true
+        },
+        {
+          "name": "best_time",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_required",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_forbidden",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "no_absent_fields",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "first_try_valid",
+          "passed": true,
+          "detail": "repairs=0",
+          "hard": false
+        },
+        {
+          "name": "judge",
+          "passed": true,
+          "detail": "clothing=5 faithful=5 ",
+          "hard": false
+        }
+      ],
+      "latency_s": 8.07,
+      "llm_calls": 1,
+      "input_tokens": 3264,
+      "output_tokens": 368,
+      "cost_usd": 0.001368,
+      "turn_input_tokens": [],
+      "judge": {
+        "clothing_score": 5,
+        "faithfulness_score": 5,
+        "issues": []
+      },
+      "judge_cost_usd": 0.00088325,
+      "error": null
+    },
+    {
+      "suite": "advice",
+      "case_id": "cold_dry",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "valid_output",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "verdict_matches_python",
+          "passed": true,
+          "detail": "model=possible_with_caution python=possible_with_caution expected=possible_with_caution",
+          "hard": true
+        },
+        {
+          "name": "best_time",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_required",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_forbidden",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "no_absent_fields",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "first_try_valid",
+          "passed": true,
+          "detail": "repairs=0",
+          "hard": false
+        },
+        {
+          "name": "judge",
+          "passed": true,
+          "detail": "clothing=5 faithful=4 The assistant claims the rain risk definition is 'below 30% and precipitation is below 0.2 mm' for low risk, but the provided rules state 'low otherwise' when the conditions for high (>= 60% or >= 1.0 mm) and moderate (>= 30% or >= 0.2 mm) are not met. The assistant's descriptive logic for 'low' is slightly narrower than the actual rule provided.; The assistant mentions a frostbite risk, which is a medical/safety claim not supported by the provided facts.",
+          "hard": false
+        }
+      ],
+      "latency_s": 5.45,
+      "llm_calls": 1,
+      "input_tokens": 3243,
+      "output_tokens": 454,
+      "cost_usd": 0.00149175,
+      "turn_input_tokens": [],
+      "judge": {
+        "clothing_score": 5,
+        "faithfulness_score": 4,
+        "issues": [
+          "The assistant claims the rain risk definition is 'below 30% and precipitation is below 0.2 mm' for low risk, but the provided rules state 'low otherwise' when the conditions for high (>= 60% or >= 1.0 mm) and moderate (>= 30% or >= 0.2 mm) are not met. The assistant's descriptive logic for 'low' is slightly narrower than the actual rule provided.",
+          "The assistant mentions a frostbite risk, which is a medical/safety claim not supported by the provided facts."
+        ]
+      },
+      "judge_cost_usd": 0.0010885,
+      "error": null
+    },
+    {
+      "suite": "advice",
+      "case_id": "hot_dry",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "valid_output",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "verdict_matches_python",
+          "passed": true,
+          "detail": "model=recommended python=recommended expected=recommended",
+          "hard": true
+        },
+        {
+          "name": "best_time",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_required",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_forbidden",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "concerns_mention",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "no_absent_fields",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "first_try_valid",
+          "passed": true,
+          "detail": "repairs=0",
+          "hard": false
+        },
+        {
+          "name": "judge",
+          "passed": true,
+          "detail": "clothing=5 faithful=5 ",
+          "hard": false
+        }
+      ],
+      "latency_s": 6.85,
+      "llm_calls": 1,
+      "input_tokens": 3260,
+      "output_tokens": 525,
+      "cost_usd": 0.0016025,
+      "turn_input_tokens": [],
+      "judge": {
+        "clothing_score": 5,
+        "faithfulness_score": 5,
+        "issues": []
+      },
+      "judge_cost_usd": 0.0009215,
+      "error": null
+    },
+    {
+      "suite": "advice",
+      "case_id": "rainy_afternoon",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "valid_output",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "verdict_matches_python",
+          "passed": true,
+          "detail": "model=recommended python=recommended expected=recommended",
+          "hard": true
+        },
+        {
+          "name": "best_time",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_required",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "concerns_mention",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "no_absent_fields",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "first_try_valid",
+          "passed": true,
+          "detail": "repairs=0",
+          "hard": false
+        },
+        {
+          "name": "judge",
+          "passed": true,
+          "detail": "clothing=5 faithful=5 ",
+          "hard": false
+        }
+      ],
+      "latency_s": 3.11,
+      "llm_calls": 1,
+      "input_tokens": 3286,
+      "output_tokens": 483,
+      "cost_usd": 0.001546,
+      "turn_input_tokens": [],
+      "judge": {
+        "clothing_score": 5,
+        "faithfulness_score": 5,
+        "issues": []
+      },
+      "judge_cost_usd": 0.0009175,
+      "error": null
+    },
+    {
+      "suite": "advice",
+      "case_id": "all_day_rain",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "valid_output",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "verdict_matches_python",
+          "passed": true,
+          "detail": "model=not_recommended python=not_recommended expected=not_recommended",
+          "hard": true
+        },
+        {
+          "name": "best_time",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_required",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "concerns_mention",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "no_absent_fields",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "first_try_valid",
+          "passed": true,
+          "detail": "repairs=0",
+          "hard": false
+        },
+        {
+          "name": "judge",
+          "passed": true,
+          "detail": "clothing=5 faithful=5 ",
+          "hard": false
+        }
+      ],
+      "latency_s": 5.59,
+      "llm_calls": 1,
+      "input_tokens": 3122,
+      "output_tokens": 462,
+      "cost_usd": 0.0014735,
+      "turn_input_tokens": [],
+      "judge": {
+        "clothing_score": 5,
+        "faithfulness_score": 5,
+        "issues": []
+      },
+      "judge_cost_usd": 0.00087125,
+      "error": null
+    },
+    {
+      "suite": "advice",
+      "case_id": "drizzle",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "valid_output",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "verdict_matches_python",
+          "passed": true,
+          "detail": "model=possible_with_caution python=possible_with_caution expected=possible_with_caution",
+          "hard": true
+        },
+        {
+          "name": "best_time",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_required",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "concerns_mention",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "no_absent_fields",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "first_try_valid",
+          "passed": true,
+          "detail": "repairs=0",
+          "hard": false
+        },
+        {
+          "name": "judge",
+          "passed": true,
+          "detail": "clothing=5 faithful=5 ",
+          "hard": false
+        }
+      ],
+      "latency_s": 2.62,
+      "llm_calls": 1,
+      "input_tokens": 3345,
+      "output_tokens": 428,
+      "cost_usd": 0.00147825,
+      "turn_input_tokens": [],
+      "judge": {
+        "clothing_score": 5,
+        "faithfulness_score": 5,
+        "issues": []
+      },
+      "judge_cost_usd": 0.0009185,
+      "error": null
+    },
+    {
+      "suite": "advice",
+      "case_id": "missing_probability",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "valid_output",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "verdict_matches_python",
+          "passed": true,
+          "detail": "model=possible_with_caution python=possible_with_caution expected=possible_with_caution",
+          "hard": true
+        },
+        {
+          "name": "best_time",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "missing_information",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "no_absent_fields",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": false,
+          "detail": "[8.8]",
+          "hard": false
+        },
+        {
+          "name": "first_try_valid",
+          "passed": true,
+          "detail": "repairs=0",
+          "hard": false
+        },
+        {
+          "name": "judge",
+          "passed": true,
+          "detail": "clothing=5 faithful=5 ",
+          "hard": false
+        }
+      ],
+      "latency_s": 2.67,
+      "llm_calls": 1,
+      "input_tokens": 3225,
+      "output_tokens": 483,
+      "cost_usd": 0.00153075,
+      "turn_input_tokens": [],
+      "judge": {
+        "clothing_score": 5,
+        "faithfulness_score": 5,
+        "issues": []
+      },
+      "judge_cost_usd": 0.00090225,
+      "error": null
+    },
+    {
+      "suite": "advice",
+      "case_id": "windy",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "valid_output",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "verdict_matches_python",
+          "passed": true,
+          "detail": "model=recommended python=recommended expected=recommended",
+          "hard": true
+        },
+        {
+          "name": "best_time",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "clothing_required",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "concerns_mention",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "no_absent_fields",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "first_try_valid",
+          "passed": true,
+          "detail": "repairs=0",
+          "hard": false
+        },
+        {
+          "name": "judge",
+          "passed": true,
+          "detail": "clothing=5 faithful=5 ",
+          "hard": false
+        }
+      ],
+      "latency_s": 2.84,
+      "llm_calls": 1,
+      "input_tokens": 3276,
+      "output_tokens": 490,
+      "cost_usd": 0.001554,
+      "turn_input_tokens": [],
+      "judge": {
+        "clothing_score": 5,
+        "faithfulness_score": 5,
+        "issues": []
+      },
+      "judge_cost_usd": 0.0009165,
+      "error": null
+    },
+    {
+      "suite": "agent",
+      "case_id": "umbrella",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "tool_calls",
+          "passed": true,
+          "detail": "called=['rainford'] expected=['rainford']",
+          "hard": true
+        },
+        {
+          "name": "answer_content",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        }
+      ],
+      "latency_s": 3.19,
+      "llm_calls": 2,
+      "input_tokens": 4628,
+      "output_tokens": 47,
+      "cost_usd": 0.0012275,
+      "turn_input_tokens": [
+        4628
+      ],
+      "judge": null,
+      "judge_cost_usd": null,
+      "error": null
+    },
+    {
+      "suite": "agent",
+      "case_id": "compare_two",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "tool_calls",
+          "passed": true,
+          "detail": "called=['frostvik', 'sunmere'] expected=['frostvik', 'sunmere']",
+          "hard": true
+        },
+        {
+          "name": "steps",
+          "passed": true,
+          "detail": "steps=2 max=2",
+          "hard": true
+        },
+        {
+          "name": "answer_content",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        }
+      ],
+      "latency_s": 7.3,
+      "llm_calls": 2,
+      "input_tokens": 7303,
+      "output_tokens": 124,
+      "cost_usd": 0.00201175,
+      "turn_input_tokens": [
+        7303
+      ],
+      "judge": null,
+      "judge_cost_usd": null,
+      "error": null
+    },
+    {
+      "suite": "agent",
+      "case_id": "no_city",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "tool_calls",
+          "passed": true,
+          "detail": "called=[] expected=[]",
+          "hard": true
+        },
+        {
+          "name": "answer_content",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        }
+      ],
+      "latency_s": 1.49,
+      "llm_calls": 1,
+      "input_tokens": 990,
+      "output_tokens": 17,
+      "cost_usd": 0.000273,
+      "turn_input_tokens": [
+        990
+      ],
+      "judge": null,
+      "judge_cost_usd": null,
+      "error": null
+    },
+    {
+      "suite": "agent",
+      "case_id": "off_topic",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "tool_calls",
+          "passed": true,
+          "detail": "called=[] expected=[]",
+          "hard": true
+        },
+        {
+          "name": "answer_content",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        }
+      ],
+      "latency_s": 1.46,
+      "llm_calls": 1,
+      "input_tokens": 995,
+      "output_tokens": 16,
+      "cost_usd": 0.00027275,
+      "turn_input_tokens": [
+        995
+      ],
+      "judge": null,
+      "judge_cost_usd": null,
+      "error": null
+    },
+    {
+      "suite": "agent",
+      "case_id": "unknown_city",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "tool_calls",
+          "passed": true,
+          "detail": "called=['atlantis'] expected=['atlantis']",
+          "hard": true
+        },
+        {
+          "name": "answer_content",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        }
+      ],
+      "latency_s": 2.38,
+      "llm_calls": 2,
+      "input_tokens": 2038,
+      "output_tokens": 53,
+      "cost_usd": 0.000589,
+      "turn_input_tokens": [
+        2038
+      ],
+      "judge": null,
+      "judge_cost_usd": null,
+      "error": null
+    },
+    {
+      "suite": "agent",
+      "case_id": "beyond_forecast",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "answer_content",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "numbers_grounded",
+          "passed": false,
+          "detail": "[24.0]",
+          "hard": false
+        }
+      ],
+      "latency_s": 9.01,
+      "llm_calls": 1,
+      "input_tokens": 995,
+      "output_tokens": 47,
+      "cost_usd": 0.00031925,
+      "turn_input_tokens": [
+        995
+      ],
+      "judge": null,
+      "judge_cost_usd": null,
+      "error": null
+    },
+    {
+      "suite": "agent",
+      "case_id": "follow_ups",
+      "repeat": 1,
+      "passed": true,
+      "checks": [
+        {
+          "name": "t1.answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "t1.tool_calls",
+          "passed": true,
+          "detail": "called=['breezeport'] expected=['breezeport']",
+          "hard": true
+        },
+        {
+          "name": "t1.numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "t2.answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "t2.answer_content",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "t2.numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        },
+        {
+          "name": "t3.answered",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "t3.answer_content",
+          "passed": true,
+          "detail": "",
+          "hard": true
+        },
+        {
+          "name": "t3.numbers_grounded",
+          "passed": true,
+          "detail": "[]",
+          "hard": false
+        }
+      ],
+      "latency_s": 32.89,
+      "llm_calls": 4,
+      "input_tokens": 8407,
+      "output_tokens": 214,
+      "cost_usd": 0.00242275,
+      "turn_input_tokens": [
+        4666,
+        1815,
+        1926
+      ],
+      "judge": null,
+      "judge_cost_usd": null,
+      "error": null
+    }
+  ]
+}

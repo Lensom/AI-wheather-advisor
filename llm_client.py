@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import os
+import re
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, TypeVar
@@ -10,9 +12,14 @@ from google import genai
 from google.genai import errors, types
 from pydantic import BaseModel, ValidationError
 
+from pricing import estimate_cost
+
 T = TypeVar("T", bound=BaseModel)
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_MODEL = "gemini-3.1-flash-lite"  # override with GEMINI_MODEL in .env
+MAX_RETRY_DELAY_S = 60.0  # longer server-requested waits fail fast instead
 
 # Transient API failures worth retrying
 _RETRYABLE_CODES = {408, 429, 500, 502, 503, 504}
@@ -31,25 +38,48 @@ class StructuredOutputError(Exception):
 
 @dataclass
 class UsageStats:
+    model: str = DEFAULT_MODEL
     calls: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    thinking_tokens: int = 0  # billed as output
     total_tokens: int = 0
+    api_seconds: float = 0.0  # time spent waiting for Gemini (successful calls)
+    repairs: int = 0  # structured() repair retries sent
+    rate_limited: int = 0  # 429 responses that were retried
+    wait_seconds: float = 0.0  # time slept before retries
 
-    def add(self, usage: types.GenerateContentResponseUsageMetadata | None) -> None:
+    def add(
+        self,
+        usage: types.GenerateContentResponseUsageMetadata | None,
+        seconds: float = 0.0,
+    ) -> None:
+        self.api_seconds += seconds
         if usage is None:
             return
         self.calls += 1
         self.prompt_tokens += usage.prompt_token_count or 0
         self.completion_tokens += usage.candidates_token_count or 0
+        self.thinking_tokens += usage.thoughts_token_count or 0
         self.total_tokens += usage.total_token_count or 0
 
+    @property
+    def cost_usd(self) -> float | None:
+        return estimate_cost(
+            self.model, self.prompt_tokens, self.completion_tokens + self.thinking_tokens
+        )
+
     def summary(self) -> str:
+        cost = self.cost_usd
         return (
             f"calls={self.calls} "
             f"prompt={self.prompt_tokens} "
             f"completion={self.completion_tokens} "
-            f"total={self.total_tokens}"
+            + (f"thinking={self.thinking_tokens} " if self.thinking_tokens else "")
+            + f"total={self.total_tokens} "
+            f"api_time={self.api_seconds:.1f}s "
+            + (f"retry_wait={self.wait_seconds:.0f}s " if self.wait_seconds else "")
+            + f"cost≈{'n/a' if cost is None else f'${cost:.5f}'}"
         )
 
 
@@ -59,7 +89,7 @@ class LLMClient:
     def __init__(
         self,
         api_key: str | None = None,
-        model: str = "gemini-3.1-flash-lite",
+        model: str | None = None,
         max_retries: int = 3,
         retry_base_delay: float = 1.0,
         max_repair_attempts: int = 1,
@@ -69,11 +99,11 @@ class LLMClient:
         if not key:
             raise ValueError("GEMINI_API_KEY not found in .env")
 
-        self.model = model
+        self.model = model or os.getenv("GEMINI_MODEL") or DEFAULT_MODEL
         self.max_retries = max_retries
         self.retry_base_delay = retry_base_delay
         self.max_repair_attempts = max_repair_attempts
-        self.usage = UsageStats()
+        self.usage = UsageStats(model=self.model)
         self._client = genai.Client(api_key=key)
 
     async def generate(self, prompt: str) -> str:
@@ -137,23 +167,40 @@ class LLMClient:
                 attempt, attempts, "; ".join(problems),
             )
             attempt_prompt = _repair_prompt(prompt, response.text or "", problems)
+            if attempt < attempts:
+                self.usage.repairs += 1
 
         raise StructuredOutputError(attempts, problems)
 
+    async def generate_response(
+        self,
+        contents: list[types.Content],
+        config: types.GenerateContentConfig,
+    ) -> types.GenerateContentResponse:
+        """Raw response for callers that drive their own control flow (tool loops).
+
+        Same retries and usage tracking as the other methods.
+        """
+        return await self._generate_content(contents, config=config)
+
     async def _generate_content(
         self,
-        prompt: str,
+        prompt: str | list[types.Content],
         config: types.GenerateContentConfig | None = None,
     ) -> types.GenerateContentResponse:
-        logger.debug("Gemini request: %d chars", len(prompt))
+        if isinstance(prompt, str):
+            logger.debug("Gemini request: %d chars", len(prompt))
+        else:
+            logger.debug("Gemini request: %d contents", len(prompt))
 
         async def call() -> types.GenerateContentResponse:
+            started = time.perf_counter()
             response = await self._client.aio.models.generate_content(
                 model=self.model,
                 contents=prompt,
                 config=config,
             )
-            self.usage.add(response.usage_metadata)
+            self.usage.add(response.usage_metadata, time.perf_counter() - started)
             return response
 
         return await self._with_retries(call)
@@ -168,7 +215,18 @@ class LLMClient:
                 last_error = exc
                 if exc.code not in _RETRYABLE_CODES or attempt + 1 >= self.max_retries:
                     raise
-                await asyncio.sleep(self.retry_base_delay * (2**attempt))
+                # 429 says how long to wait; 1-2 s backoff would just burn the retries.
+                delay = _server_retry_delay(exc) or self.retry_base_delay * (2**attempt)
+                if delay > MAX_RETRY_DELAY_S:
+                    raise  # e.g. a daily quota: waiting won't help, fail fast
+                if exc.code == 429:
+                    self.usage.rate_limited += 1
+                self.usage.wait_seconds += delay
+                logger.warning(
+                    "Gemini %s %s, retrying in %.0f s (attempt %d/%d)",
+                    exc.code, exc.status, delay, attempt + 2, self.max_retries,
+                )
+                await asyncio.sleep(delay)
 
         raise RuntimeError("retry loop exited unexpectedly") from last_error
 
@@ -187,6 +245,17 @@ class LLMClient:
             raise ValueError(f"empty response (finish_reason={reason})")
         # Always validate the raw text ourselves: response.parsed skips our context validators.
         return schema.model_validate_json(response.text, context=context)
+
+
+def _server_retry_delay(exc: errors.APIError) -> float | None:
+    """Seconds from google.rpc.RetryInfo ("retryDelay": "21s"), if the server sent one."""
+    details = exc.details.get("error", {}).get("details", []) if isinstance(exc.details, dict) else []
+    for item in details:
+        if isinstance(item, dict) and item.get("@type", "").endswith("RetryInfo"):
+            match = re.fullmatch(r"(\d+(?:\.\d+)?)s", str(item.get("retryDelay", "")))
+            if match:
+                return float(match.group(1)) + 1.0  # small margin past the quota window
+    return None
 
 
 def _format_validation_errors(exc: ValidationError) -> list[str]:

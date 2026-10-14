@@ -84,6 +84,7 @@ def geocode_city(
                     longitude=item["longitude"],
                     timezone=item["timezone"],
                     admin1=item.get("admin1"),
+                    country_code=item.get("country_code"),
                 )
             )
         except (KeyError, TypeError, ValidationError) as exc:

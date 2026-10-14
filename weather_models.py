@@ -18,6 +18,7 @@ class Location(BaseModel):
     longitude: float
     timezone: str
     admin1: str | None = None  # region / oblast when available
+    country_code: str | None = None  # ISO 3166-1 alpha-2, e.g. "UA"
 
 
 class CurrentConditions(BaseModel):

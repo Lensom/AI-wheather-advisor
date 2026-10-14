@@ -1,5 +1,6 @@
-google-genai
-python-dotenv
-pydantic
-httpx
-pytest
+# Pinned so evaluation results are comparable between runs.
+google-genai==2.29.0
+python-dotenv==1.2.4
+pydantic==2.14.0
+httpx==0.28.1
+pytest==9.1.1

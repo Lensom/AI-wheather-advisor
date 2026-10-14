@@ -19,6 +19,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
+from assessment import assess
 from grounding import find_unsupported_numbers
 from indicators import compute_indicators
 from llm_client import LLMClient
@@ -71,7 +72,7 @@ def load_snapshot(degraded: bool) -> WeatherSnapshot:
 
 async def run(degraded: bool) -> None:
     snapshot = load_snapshot(degraded)
-    facts = weather_facts_json(snapshot, compute_indicators(snapshot))
+    facts = weather_facts_json(snapshot, compute_indicators(snapshot), assess(snapshot))
     llm = LLMClient()
 
     rows: list[tuple[str, int, list[float], int]] = []

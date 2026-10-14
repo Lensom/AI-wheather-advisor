@@ -4,9 +4,10 @@ import asyncio
 import json
 
 import pytest
-from google.genai import types
+from google.genai import errors, types
 
 from advice_models import WeatherAdvice
+import llm_client
 from llm_client import LLMClient, StructuredOutputError
 
 VALID = {
@@ -14,6 +15,7 @@ VALID = {
     "clothing_recommendations": ["Light jacket"],
     "outdoor_activity": "recommended",
     "reasoning": ["temperature_c is 12.5"],
+    "rain_risk_explanation": "rain_risk.overall is low",
     "best_time": "2026-10-15T16:00:00",
 }
 INVALID = {**VALID, "outdoor_activity": "maybe"}
@@ -88,3 +90,52 @@ def test_truncated_response_rejected():
     ] * 2)
     with pytest.raises(StructuredOutputError, match="MAX_TOKENS"):
         run(llm)
+
+
+# --- retries on API errors -----------------------------------------------------------
+
+
+def api_error(code: int, retry_delay: str | None = None) -> errors.APIError:
+    details = [{"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": retry_delay}] if retry_delay else []
+    return errors.ClientError(code, {"error": {"code": code, "status": "X", "message": "m", "details": details}})
+
+
+def run_with_failures(monkeypatch, failures: list[Exception]):
+    """Call _with_retries with a call that fails with `failures` first; record sleeps."""
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds):
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(llm_client.asyncio, "sleep", fake_sleep)
+    llm = LLMClient(api_key="test-key")
+    queue = list(failures)
+
+    async def call():
+        if queue:
+            raise queue.pop(0)
+        return "ok"
+
+    return asyncio.run(llm._with_retries(call)), sleeps, llm
+
+
+def test_429_waits_as_long_as_server_asks(monkeypatch):
+    result, sleeps, llm = run_with_failures(monkeypatch, [api_error(429, "21s")])
+    assert result == "ok"
+    assert sleeps == [22.0]  # 21 s + 1 s margin, not the 1 s backoff
+    assert llm.usage.rate_limited == 1 and llm.usage.wait_seconds == 22.0
+
+
+def test_backoff_without_server_hint(monkeypatch):
+    _, sleeps, _ = run_with_failures(monkeypatch, [api_error(503), api_error(503)])
+    assert sleeps == [1.0, 2.0]
+
+
+def test_too_long_server_delay_fails_fast(monkeypatch):
+    with pytest.raises(errors.ClientError):
+        run_with_failures(monkeypatch, [api_error(429, "3600s")])
+
+
+def test_non_retryable_error_raises_immediately(monkeypatch):
+    with pytest.raises(errors.ClientError):
+        run_with_failures(monkeypatch, [api_error(400)])
