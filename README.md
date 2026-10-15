@@ -28,7 +28,7 @@ pip install -r requirements.txt
 copy .env.example .env               # Windows (cp on macOS/Linux), then set GEMINI_API_KEY
 ```
 
-Optional `.env` settings: `GEMINI_MODEL`, `GEMINI_PRICE_INPUT_PER_M`, `GEMINI_PRICE_OUTPUT_PER_M` (see `pricing.py`).
+Optional `.env` settings: `GEMINI_MODEL`, `GEMINI_PRICE_INPUT_PER_M`, `GEMINI_PRICE_OUTPUT_PER_M` (see `pricing.py`), `LOG_LEVEL` (`DEBUG` shows request sizes and every agent step).
 
 ## Run
 
@@ -45,24 +45,42 @@ python main.py --ask "Kyiv or Lviv for a walk?"  # one question
 
 ## Architecture
 
-| Module | Responsibility |
-|--------|----------------|
-| `weather_models.py` | Weather domain models |
-| `weather_client.py` | Open-Meteo geocoding + forecast |
-| `indicators.py` | Deterministic metrics + comfort heuristic |
-| `assessment.py` | Deterministic decisions: rain risk, walk score, walk candidates, outdoor verdict |
-| `advice_models.py` | `WeatherAdvice` structured output schema |
-| `prompts.py` | Facts JSON + grounding rules |
-| `llm_client.py` | Gemini client, retries (honours 429 `retryDelay`), usage/cost/latency, structured parse + repair retry |
-| `pricing.py` | Price table for cost estimates (env-overridable) |
-| `grounding.py` | Heuristic check: numbers in AI text must exist in the facts |
-| `experiments/compare_prompts.py` | Stage 2: compare prompt variants on one fixed dataset |
-| `tests/` | Offline tests: rules, schema, repair loop, tools, agent loop, eval harness (fake Gemini / fake weather) |
-| `tools.py` | `get_weather` declaration, argument validation, execution, cache, budget |
-| `agent.py` | Tool-calling loop, system instruction, history, step limit |
-| `cli.py` | CLI orchestration (classic + `--ask`) |
-| `evals/` | Stage 6: scenarios, checks, LLM judge, runner, `baseline.json` |
-| `main.py` | Entry point |
+Layers, from the outside in. Each layer only imports from layers below it (no import cycles):
+
+```
+interface      main.py → cli.py                       print, input, exit codes, logging setup
+                   │
+AI             agent.py   tools.py   prompts.py   advice_models.py   grounding.py
+                   │          │          │              │
+                   └──────────┴──── llm_client.py ── pricing.py       (Gemini: retries, usage, cost)
+                              │
+domain         assessment.py   indicators.py                          (Python decisions + numbers)
+                              │
+data           weather_client.py → weather_models.py                  (Open-Meteo, validated models)
+```
+
+- The **domain and data layers know nothing about AI**: they can be tested, reused or replaced without touching Gemini code.
+- **`llm_client.py` knows nothing about weather**: it's a generic Gemini wrapper (retries, usage, structured output).
+- **Only `cli.py` prints and configures logging**: the other modules return values or raise typed errors, so a web UI could reuse them unchanged.
+
+| Layer | Module | Responsibility |
+|---|---|---|
+| Interface | `main.py` | Entry point, `--ask` flag |
+| | `cli.py` | Both CLI flows, display, error → message and exit code, logging setup |
+| AI | `agent.py` | Tool-calling loop, system instruction, history, compaction, rollback |
+| | `tools.py` | `get_weather` declaration, argument validation, execution, cache, budget |
+| | `prompts.py` | Facts payload and grounded prompt for the classic flow |
+| | `advice_models.py` | `WeatherAdvice` schema and validators (validation context) |
+| | `grounding.py` | Heuristic check: numbers in AI text must exist in the facts |
+| | `llm_client.py` | Gemini client: retries (429 `retryDelay`), structured output + repair, usage, latency |
+| | `pricing.py` | Price table for cost estimates (env-overridable) |
+| Domain | `assessment.py` | Decisions: rain risk, walk score, walk candidates, outdoor verdict |
+| | `indicators.py` | Metrics and comfort heuristic |
+| Data | `weather_client.py` | Open-Meteo geocoding and forecast, typed errors |
+| | `weather_models.py` | Validated weather models |
+| Quality | `tests/` | 122 offline tests (fake Gemini, fake weather) |
+| | `evals/` | Scenarios, checks, LLM judge, runner, `baseline.json` |
+| | `experiments/` | Stage 2 prompt comparison |
 
 ### Data flow
 

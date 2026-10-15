@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import sys
 
 import httpx
+from dotenv import load_dotenv
+from google.genai import errors
 
 from advice_models import WeatherAdvice, validation_context
 from agent import AgentLoopError, AgentResult, WeatherAgent
@@ -240,9 +243,13 @@ def display_advice(advice: WeatherAdvice, usage: str, unsupported: list[float]) 
 
 
 def _configure_logging() -> None:
+    # LOG_LEVEL=DEBUG in .env shows request sizes and every agent step.
+    load_dotenv()
+    level = os.getenv("LOG_LEVEL", "INFO").upper()
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(levelname)s %(name)s: %(message)s",
+        level=getattr(logging, level, logging.INFO),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
     )
     logging.getLogger("httpx").setLevel(logging.WARNING)
     # Gemini SDK is noisy at INFO during normal runs.
@@ -276,7 +283,10 @@ async def _ask_loop(question: str | None) -> int:
                 return 0
         try:
             result = await agent.ask(question)
-        except AgentLoopError as exc:
+        except (AgentLoopError, errors.APIError) as exc:
+            # agent.ask() already rolled back the failed turn, so the session stays usable.
+            if isinstance(exc, errors.APIError):
+                logger.warning("Gemini API error: %s %s", exc.code, exc.status)
             print(f"\nAgent error: {exc}")
             if not interactive:
                 return 1

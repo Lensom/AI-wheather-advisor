@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from dataclasses import dataclass
 
 from google.genai import types
@@ -29,9 +30,11 @@ from grounding import find_unsupported_numbers
 from llm_client import LLMClient
 from tools import ToolCallRecord, WeatherTools
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_MAX_STEPS = 4  # model calls per question, including the final answer
 
-SYSTEM_INSTRUCTION = """You are a weather assistant. You have one tool: get_weather(city, country?).
+SYSTEM_INSTRUCTION = """You are a weather assistant. You have one tool: get_weather(city, country?, region?).
 
 Rules:
 1. For any question about weather, clothing, walks or outdoor plans in a place, call
@@ -121,6 +124,10 @@ class WeatherAgent:
             )
             calls = response.function_calls or []
             model_turn = response.candidates[0].content if response.candidates else None
+            logger.debug(
+                "step %d/%d: %s", step, self.max_steps,
+                ", ".join(f"{c.name}({c.args})" for c in calls) if calls else "text answer",
+            )
 
             if not calls:
                 answer = _text_of(model_turn)
